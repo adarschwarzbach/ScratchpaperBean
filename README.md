@@ -1,6 +1,19 @@
-# Spresso Web - An Isotachphoresis Simulator
+# BEAN-ITP - An Isotachphoresis Calculator
 
-This project is a web based GPU-accelerated re-implementation of 
+🏗️🚜🏢🏗️🚧🚜🏢🏗️🚧🏗️
+🚜🏢🏢🚜🚧🏢🚜🏗️🚧🚜
+🏢🚧🚜🏢🚜🏢🏗️🚧🚜🏢
+🏗️🚧🚜🚜🏗️🏢🚜🏗️🚧
+🚧🚜🏗️🚧🚜🚧🚜🚧🏗️
+🏢🏗️🚧🏗️🚧🏢🚧🏗️🚜
+🏗️🚜🚜🏢🏗️🚧🚜🏢🏢
+🚜🏢🚜🏗️🏢🚧🚜🚧🚜
+🏗️🚧🚧🏗️🚜🏗️🚧🚜🚧
+
+**Work in progres**
+🟢🟡⚪️⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+
+<!-- This project is a web based GPU-accelerated re-implementation of 
 [Spresso](http://stanfordspresso.blogspot.com/) (Stanford Public Release Electrophoretic 
 Sparation Solver). It adopts a pure-frontend implementation that removes the requirement 
 for a backend compute server. This means that all computations run entirely on local browsers,
@@ -41,5 +54,5 @@ supports for `cumsum` operator.
 This project is bootstrapped with 
 [Create React App](https://github.com/facebook/create-react-app). Follow their instructions 
 to setup and serve the project.
-
+ -->
 
