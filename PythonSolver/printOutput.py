@@ -1,7 +1,7 @@
 import numpy as np
 
 # File path
-file_path = "./output/output_sample_file_4.npz"
+file_path = "/Users/adarschwarzbach/dev/BEAN-ITP/PythonSolver/output/output_sample_file_4.npz"
 
 # Load the .npz file
 loaded_data = np.load(file_path)

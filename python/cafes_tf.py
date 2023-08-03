@@ -2,6 +2,8 @@ import argparse
 import os
 import uuid
 
+# geenrates tf model and safes to disk
+
 from pathlib import Path
 import tensorflow as tf
 
@@ -268,6 +270,7 @@ class CafesSim(CafesInit):
         tf.TensorSpec(shape=[], name='dt'),
         tf.TensorSpec(shape=[], name='tolerance'),
     ))
+    
     def __call__(self, cH_n, c_mat_sn, l_mat_sd, val_mat_sd, u_mat_sd, d_mat_sd,
                  current, dx, dt, tolerance):
         # chemical equillibrium
@@ -288,8 +291,9 @@ class CafesSim(CafesInit):
         return cH_n, efield_vec_n, c_mat_5_sn, dt, dt*dt_scale
 
 def parse_args():
+    print('test')
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output', type=str, required=True,
+    parser.add_argument('-o', '--output', type=str, default='./',
                         help='directory to store the output model')
     return parser.parse_args()
 

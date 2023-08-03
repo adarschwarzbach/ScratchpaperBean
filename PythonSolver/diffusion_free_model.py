@@ -30,8 +30,51 @@ import sys
 from time import time
 import pprint
 
+import tensorflow as tf
 
-F = 96500.0e0             # C / mol
+# species = { 0: {'Name': 'Imidazol', 'valence': [1], 'mobility': [52.0e-9], 
+# 		'pKa': [7.15], 'concentration': 0.07, 'type': 'LE'},
+# 	    1: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
+# 		'pKa': [-2], 'concentration': 0.03, 'type': 'Background'}, 
+# 	    2: {'Name': 'BisTris', 'valence': [1], 'mobility': [29.5e-9], 
+# 		'pKa': [6.4], 'concentration': 0.01, 'type': 'Analyte'},
+# 	    3: {'Name': 'Pyridine', 'valence': [1], 'mobility': [29.5e-9], 
+# 		'pKa': [5.18], 'concentration': 0.1, 'type': 'TE'}, 
+# 	}	
+
+
+# START GLOBALS
+species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
+		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
+	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
+		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
+	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
+		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
+	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
+		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
+	}
+
+
+cMat_read = [[0.01 , 0.   , 0.   , 0.   ],
+       [0.02 , 0.02 , 0.02 , 0.02 ],
+       [0.   , 0.001, 0.   , 0.   ],
+       [0.   , 0.   , 0.005, 0.005]]
+
+
+IonicEffectFlag = 0
+met2lit = 1000.0
+N = 4
+Nspecies = len(species) 
+cMat_read = np.zeros((Nspecies,N)) #initialize cMat to zero
+cMat_read[0,0] = species[0]['concentration']
+cMat_read[1,:] = species[1]['concentration']
+cMat_read[2,1] = species[2]['concentration']
+cMat_read[3,2:] = species[3]['concentration']
+# END GLOBALS
+
+
+
+F = 96500.            # C / mol
 met2lit = 1000.0e0
 Rmu = 8.314e0
 Temperature = 298.0e0
@@ -40,23 +83,28 @@ muOH = 205e-9
 visc = 1e-3  # Dynamic viscosity (water) (Pa s)
 
 
-def InitialConditions(filename):
-    # reads input file and assigns values to various simulation variables and parameters
-    f = open(filename)
+def InitialConditions():
+    # # reads input file and assigns values to various simulation variables and parameters
+    # f = open(filename)
 
-    input_lines = ''
-    for line in f:                         # loop over the file
-        line = line.lstrip('\n')  # strip lines of left indents/whitespace
-        input_lines = input_lines + line  # join all lines in input file
+    # input_lines = ''
+    # for line in f:                         # loop over the file
+    #     line = line.lstrip('\n')  # strip lines of left indents/whitespace
+    #     input_lines = input_lines + line  # join all lines in input file
 
-    # announce global variables to be modified
+    # # announce global variables to be modified
+    # exec(input_lines, globals())
+    # f.close()
 
-    exec(input_lines, globals())
-    f.close()
+    # print(met2lit, cMat_read)
     cMat = cMat_read*met2lit  # Convert from mol/lit to mol/m^3
     cMat_init = np.copy(cMat)
     LMat, muMat, ValMat, DMat, KaMat, zListArranged, PolDeg = EquilibriumParameters(
         species)
+    
+    # check = TFEquilibriumParameters(species)
+    # check2 = EquilibriumParameters(species)
+    # print( check == check2)
 
     mu_max = abs(muMat).max()
     D_max = DMat.max()
@@ -98,6 +146,100 @@ def Dimensionalize(x, quantity, ref_values):
     y = x*ref_values[quantity]
     return y
 
+import tensorflow as tf
+
+def TFEquilibriumParameters(species, Rmu=8.314, F=96500, Temperature=298):
+    # Calculates parameters for chemical equilibrium calculation
+    Rmu = tf.cast(Rmu, dtype=tf.float64)
+    F = tf.cast(F, dtype=tf.float64)
+    Temperature = tf.cast(Temperature, dtype=tf.float64)
+    MaxCol = 1
+    for j in species:
+        num_mobility = len(species[j]['mobility'])
+        if num_mobility > MaxCol:
+            MaxCol = num_mobility
+    MaxCol = MaxCol + 1
+    Nspecies = len(species)
+
+    LMat = tf.zeros_like([[_ for _ in range(MaxCol)] for _ in range(Nspecies)], dtype=tf.float64)  # initialize to zero.
+
+    zListArranged = {}
+    index = 0
+    zMat_list = []
+    muMat_list = []
+    KaMat_list = []
+    DMat_list = []
+
+
+    zMat = tf.constant([], dtype=tf.int32)
+    muMat = tf.constant([], dtype=tf.float64)
+    KaMat = tf.constant([], dtype=tf.float64)
+    DMat = tf.constant([], dtype=tf.float64)
+
+    for j in species:
+        zList = tf.constant(species[j]['valence'], dtype=tf.float64)
+        muList = tf.constant(species[j]['mobility'], dtype=tf.float64)
+        KaList = tf.constant(10.0, dtype=tf.float64)**(-tf.constant(species[j]['pKa'], dtype=tf.float64))
+        DList = Rmu * Temperature * muList / (F * zList)  # diffusivity
+
+
+        index = tf.argsort(zList)  # sort all lists
+        zList = tf.gather(zList, index)
+        muList = tf.gather(muList, index)
+        KaList = tf.gather(KaList, index)
+        DList = tf.gather(DList, index)
+
+        muList = tf.concat([tf.boolean_mask(muList, zList < 0), [0.0], tf.boolean_mask(muList, zList > 0)], axis=0)
+        KaList = tf.concat([tf.boolean_mask(KaList, zList < 0), [1.0], tf.boolean_mask(KaList, zList > 0)], axis=0)
+        # For calculating mean, use tf.reduce_mean.
+        DList = tf.concat([tf.boolean_mask(DList, zList < 0), [tf.reduce_mean(DList)], tf.boolean_mask(DList, zList > 0)], axis=0)
+        # Make sure to convert 0 to the same dtype as zList to avoid possible dtype mismatch.
+        zero_tensor = tf.constant([0], dtype=zList.dtype)
+        zList = tf.concat([tf.boolean_mask(zList, zList < 0), zero_tensor, tf.boolean_mask(zList, zList > 0)], axis=0)
+        
+        zMat_list.append(zList)
+        muMat_list.append(muList)
+        KaMat_list.append(KaList)
+        DMat_list.append(DList)
+        zListArranged[j] = tf.cast(zList, dtype=tf.int32)
+        nj = tf.reduce_min(zList)
+        pj = tf.reduce_max(zList)
+
+        for z in zList:
+            indices  = [j, z-nj]
+            value = [1.0]
+            shape = [Nspecies, MaxCol]
+            if z < 0:
+                value = [tf.reduce_prod(KaList[tf.cast(z, tf.int32)-tf.cast(nj, tf.int32)])]
+            elif z > 0:
+                value = [1.0/tf.reduce_prod(KaList[-tf.cast(nj, tf.int32):tf.cast(z, tf.int32)-tf.cast(nj, tf.int32)+1])]
+            indices = [tf.cast(idx, tf.int32) for idx in indices]  # Cast indices to int32
+            updates = [value[0]]  # Extract the single value from the 'value' list
+            LMat = tf.tensor_scatter_nd_update(LMat, [indices], updates)
+
+    
+    zMat = tf.stack(zMat_list)
+    muMat = tf.stack(muMat_list)
+    KaMat = tf.stack(KaMat_list)
+    DMat = tf.stack(DMat_list)
+
+    ## Convert to NumPy arrays For testing ##
+
+    # LMat_numpy = LMat.numpy()
+    # muMat_numpy = muMat.numpy()
+    # zMat_numpy = zMat.numpy()
+    # DMat_numpy = DMat.numpy()
+    # KaMat_numpy = KaMat.numpy()
+
+    # # Convert the dictionary values to NumPy arrays
+    # zListArranged_numpy = {key: np.array(value) for key, value in zListArranged.items()}
+
+    # # Now return the NumPy arrays
+    # return LMat_numpy, muMat_numpy, zMat_numpy, DMat_numpy, KaMat_numpy, zListArranged_numpy, MaxCol
+
+    return LMat, muMat, zMat, DMat, KaMat, zListArranged, MaxCol
+
+
 
 def EquilibriumParameters(species):
     # Calculates parameters for chemical equilibrium calculation
@@ -123,11 +265,13 @@ def EquilibriumParameters(species):
         KaList = 10.0**(-np.array(species[j]['pKa'], float))
         DList = Rmu*Temperature*muList/(F*zList)  # diffusivity
 
+
         index = np.argsort(zList)  # sort all lists
         zList = zList[index]
         muList = muList[index]
         KaList = KaList[index]
         DList = DList[index]
+
 
         muList = np.concatenate(
             (muList[zList < 0], [0.0], muList[zList > 0]), axis=0)
@@ -138,6 +282,7 @@ def EquilibriumParameters(species):
         # zList at end to avoid changing in zList
         zList = np.concatenate(
             (zList[zList < 0], [0], zList[zList > 0]), axis=0)
+        
 
         N_list = len(zList)
 
@@ -150,13 +295,15 @@ def EquilibriumParameters(species):
         nj = np.min(zList)
         pj = np.max(zList)
 
+        # print(DMat, 'np \n')
+
         '''
     E.g. if z = [-2, -1, 0, 1, 2, 3]
     nj = -2 
     pj = 3
     
     '''
-
+        print(zList)
         for z in zList:
             if z < 0:
                 LMat[j, z-nj] = np.prod(KaList[z-nj:-nj])
@@ -164,9 +311,10 @@ def EquilibriumParameters(species):
                 LMat[j, z-nj] = 1.0/np.prod(KaList[-nj:z-nj+1])
             elif z == 0:
                 LMat[j, z-nj] = 1.0
-
     return LMat, muMat, zMat, DMat, KaMat, zListArranged, MaxCol
 
+
+# lz_func(self, cH_n, c_mat_sn, l_mat_sd, val_mat_sd):
 
 def LzFunc(cH, LCube, cMat, ValCube, PolDeg, N, Nspecies, Kw, approx_factor):
     # Equation for iterative solution of pH
@@ -195,6 +343,7 @@ def LzFunc(cH, LCube, cMat, ValCube, PolDeg, N, Nspecies, Kw, approx_factor):
     F = F_num/F_den
 
     return F
+
 
 
 def LzCalcEquilibrium(cH, LCube, cMat, ValCube, PolDeg, N, Nspecies, Kw):
@@ -548,51 +697,147 @@ def save_data(cMat, cMat_init, cH, Sigma, pH, muMat):
     print("data saved in file ", file_name)
 
 
+
+
+
+
+
+# 
 t_start = time()
-input_file =sys.argv[1]
-print("Input file :- ", input_file)
+# input_file =sys.argv[1]
+# print("Input file :- ", input_file)
 
-cMat, cMat_init, muCube, DCube, ValCube, LCube, KaListCube, PolDeg, zListArranged, ref_values, species, N, Nspecies, Kw, cH = InitialConditions(
-    input_file)  # Initialize the system using the input file
+cMat, cMat_init, muCube, DCube, ValCube, LCube, KaListCube, PolDeg, zListArranged, ref_values, species, N, Nspecies, Kw, cH = InitialConditions()  # Initialize the system using the input file
 
-IonicCalcFlag = 0
-cMat, Res, muMat, Sigma, pH, cH = FuncSteadyStateSolver(
-    IonicCalcFlag, IonicEffectFlag, cH, cMat, LCube, KaListCube, ValCube, zListArranged, muCube, DCube, PolDeg, N, Nspecies, Kw, ref_values)
+# IonicCalcFlag = 0
 
-print('\nResidue', Res)
-print("\nComputed zone concentrations")
-print(cMat)
-print("\nComputed effective mobilities in various zones")
-print(muMat)
-#print(cH)
-print('\npH in ITP zones',pH)
-print('\nConducitivity in ITP zones',Sigma)
+# cMat, Res, muMat, Sigma, pH, cH = FuncSteadyStateSolver(
+#     IonicCalcFlag, IonicEffectFlag, cH, cMat, LCube, KaListCube, ValCube, zListArranged, muCube, DCube, PolDeg, N, Nspecies, Kw, ref_values)
 
-#print(-np.log10(cH))
-mu_abs = abs(muMat)
+# print('\nResidue', Res)
+# print("\nComputed zone concentrations")
+# print(cMat)
+# print("\nComputed effective mobilities in various zones")
+# print(muMat)
+# #print(cH)
+# print('\npH in ITP zones',pH)
+# print('\nConducitivity in ITP zones',Sigma)
 
-print('\nCheck stability of zones using ITP focusing conditions')
-Focus = 1 #initialise 
-# df = pd.read_csv('Cationic_DataBase.csv', lineterminator='\n')
-if (mu_abs[0, 0] > mu_abs[2, 0]) and (mu_abs[0, 0] > mu_abs[3, 0]):  # LE zone
-    print('LE zone condition satisfied')
-else:
-	Focus=Focus*0
-	print('LE zone condition not satisfied')    
-if (mu_abs[0, 1] > mu_abs[2, 1]) and (mu_abs[2, 1] > mu_abs[3, 1]):  # Analyte zone
-    print('Analyte zone condition satisfied')
-else:
-	Focus=Focus*0
-	print('Analyte zone condition not satisfied')
-if (mu_abs[0, 2] > mu_abs[3, 2]) and (mu_abs[2, 2] > mu_abs[3, 2]):  # TE zone
-    print('TE zone condition satisfied')
-else:
-	Focus=Focus*0
-	print('TE zone condition not satisfied')
+# #print(-np.log10(cH))
+# mu_abs = abs(muMat)
 
-if Focus==1:
-   print('\nStable ITP predicted')
-else:
-   print('\nNo ITP predicted')	
+# print('\nCheck stability of zones using ITP focusing conditions')
+# Focus = 1 #initialise 
+# # df = pd.read_csv('Cationic_DataBase.csv', lineterminator='\n')
+# if (mu_abs[0, 0] > mu_abs[2, 0]) and (mu_abs[0, 0] > mu_abs[3, 0]):  # LE zone
+#     print('\nLE zone condition satisfied')
+# else:
+# 	Focus=Focus*0
+# 	print('LE zone condition not satisfied')    
+# if (mu_abs[0, 1] > mu_abs[2, 1]) and (mu_abs[2, 1] > mu_abs[3, 1]):  # Analyte zone
+#     print('\nAnalyte zone condition satisfied')
+# else:
+# 	Focus=Focus*0
+# 	print('Analyte zone condition not satisfied')
+# if (mu_abs[0, 2] > mu_abs[3, 2]) and (mu_abs[2, 2] > mu_abs[3, 2]):  # TE zone
+#     print('\nTE zone condition satisfied')
+# else:
+# 	Focus=Focus*0
+# 	print('\nTE zone condition not satisfied')
 
-save_data(cMat,cMat_init,cH,Sigma,pH,muMat)
+# if Focus==1:
+#    print('\nStable ITP predicted')
+# else:
+#    print('\nNo ITP predicted')	
+
+# save_data(cMat,cMat_init,cH,Sigma,pH,muMat)
+
+
+# Array name: arr_0
+# [[10.  0.  0.  0.]
+#  [20. 20. 20. 20.]
+#  [ 0.  1.  0.  0.]
+#  [ 0.  0.  5.  5.]]
+# ---
+# Array name: arr_1
+# [[10.          0.          0.          0.        ]
+#  [20.         16.55455057 16.09768635 20.        ]
+#  [ 0.          6.54073495  0.          0.        ]
+#  [ 0.          0.          6.07720389  5.        ]]
+# ---
+# Array name: arr_2
+# [[8.39658553e-09 4.86571984e-09 4.19887236e-09 2.53117053e-09]]
+# ---
+# Array name: arr_3
+# [[0.10482622 0.03309658 0.02749259 0.02376679]]
+# ---
+# Array name: arr_4
+# [[8.07589728 8.3128529  8.37686733 8.59667859]]
+# ---
+# Array name: arr_5
+# [[-7.91000000e-08 -7.91000000e-08 -7.91000000e-08 -7.91000000e-08]
+#  [ 1.47517443e-08  1.08246813e-08  9.83578892e-09  6.83425772e-09]
+#  [-2.37406655e-08 -2.49740868e-08 -2.52215644e-08 -2.58624913e-08]
+#  [-1.85693927e-08 -2.03662886e-08 -2.07454227e-08 -2.17584002e-08]]
+# ---__________-----------
+
+
+# Input file :-  sample_file.txt
+# 1000.0 [[0.01  0.    0.    0.   ]
+#  [0.02  0.02  0.02  0.02 ]
+#  [0.    0.001 0.    0.   ]
+#  [0.    0.    0.005 0.005]]
+# [[1.00000000e+02 1.00000000e+00]
+#  [1.00000000e+00 1.19124201e+08]
+#  [6.30957344e-08 1.00000000e+00]
+#  [3.16227766e-08 1.00000000e+00]] [[-7.91e-08  0.00e+00]
+#  [ 0.00e+00  2.95e-08]
+#  [-2.69e-08  0.00e+00]
+#  [-2.35e-08  0.00e+00]] [[-1.  0.]
+#  [ 0.  1.]
+#  [-1.  0.]
+#  [-1.  0.]] [[2.03083881e-09 2.03083881e-09]
+#  [7.57392477e-10 7.57392477e-10]
+#  [6.90639241e-10 6.90639241e-10]
+#  [6.03346549e-10 6.03346549e-10]] [[1.00000000e+02 1.00000000e+00]
+#  [1.00000000e+00 8.39459987e-09]
+#  [6.30957344e-08 1.00000000e+00]
+#  [3.16227766e-08 1.00000000e+00]] {0: array([-1,  0]), 1: array([0, 1]), 2: array([-1,  0]), 3: array([-1,  0])} 2
+
+# Iterations for analyte zone
+# Iteration = 1, Err=5.95583
+# Iteration = 11, Err=4.35523e-05
+# Iteration = 21, Err=3.9534e-10
+
+# Iterations for adjusted TE zone
+# Iteration = 1, Err=0.887018
+# Iteration = 11, Err=4.55023e-05
+# Iteration = 21, Err=2.35965e-09
+
+# Residue [1.84430249e-12 3.17701421e-12 2.23032703e-12 3.84059451e-12]
+
+# Computed zone concentrations
+# [[10.          0.          0.          0.        ]
+#  [20.         16.55455057 16.09768635 20.        ]
+#  [ 0.          6.54073495  0.          0.        ]
+#  [ 0.          0.          6.07720389  5.        ]]
+
+# Computed effective mobilities in various zones
+# [[-7.91000000e-08 -7.91000000e-08 -7.91000000e-08 -7.91000000e-08]
+#  [ 1.47517443e-08  1.08246813e-08  9.83578892e-09  6.83425772e-09]
+#  [-2.37406655e-08 -2.49740868e-08 -2.52215644e-08 -2.58624913e-08]
+#  [-1.85693927e-08 -2.03662886e-08 -2.07454227e-08 -2.17584002e-08]]
+
+# pH in ITP zones [[8.07589728 8.3128529  8.37686733 8.59667859]]
+
+# Conducitivity in ITP zones [[0.10482622 0.03309658 0.02749259 0.02376679]]
+
+# Check stability of zones using ITP focusing conditions
+
+# LE zone condition satisfied
+
+# Analyte zone condition satisfied
+
+# TE zone condition satisfied
+
+# Stable ITP predicted

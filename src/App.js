@@ -457,7 +457,7 @@ class SimUI extends React.Component {
             textAlign="center"
             borderRadius={16}
           >
-            <h1>Client-based Application for Fast Electrophoresis Simulation (CAFES)</h1>
+            <h1>Browser-based Electrolyte Analyses for ITP (BEAN)</h1>
           </Box>
         </Grid>
         <Box mb={2} key="basic"><Grid container>
@@ -951,9 +951,10 @@ class SimUI extends React.Component {
         }
         <Box>
         <div>Reference*:</div>
-        <div>Avaro, A.S.; Sun, Y.; Jiang, K.; Bahga, S.S.; Santiago, J.G. "Web-based open-source tool for isotachophoresis", in press, <i>Analytical Chemistry</i>, <b>2021</b>. </div>
+        <div>??? </div>
+          {/* in press, <i>Analytical Chemistry</i>, <b>2021</b>. </div> */}
         <br/>
-        <div>*If you use this tool as part of any published work, please cite this paper.</div>
+        {/* <div>*If you use this tool as part of any published work, please cite this paper.</div> */}
         <br/>
         </Box>
       </div>
