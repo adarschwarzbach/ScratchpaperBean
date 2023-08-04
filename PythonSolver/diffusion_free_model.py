@@ -216,13 +216,12 @@ def TFEquilibriumParameters(species, Rmu=8.314, F=96500, Temperature=298):
             updates = [value[0]]  # Extract the single value from the 'value' list
             LMat = tf.tensor_scatter_nd_update(LMat, [indices], updates)
 
-    
-    zMat = tf.stack(zMat_list)
-    muMat = tf.stack(muMat_list)
-    KaMat = tf.stack(KaMat_list)
-    DMat = tf.stack(DMat_list)
+    zMat = pad_and_stack(zMat_list)
+    muMat = pad_and_stack(muMat_list)
+    KaMat = pad_and_stack(KaMat_list)
+    DMat = pad_and_stack(DMat_list)
 
-    ## Convert to NumPy arrays For testing ##
+    # # Convert to NumPy arrays For testing ##
 
     # LMat_numpy = LMat.numpy()
     # muMat_numpy = muMat.numpy()
@@ -237,6 +236,13 @@ def TFEquilibriumParameters(species, Rmu=8.314, F=96500, Temperature=298):
     # return LMat_numpy, muMat_numpy, zMat_numpy, DMat_numpy, KaMat_numpy, zListArranged_numpy, MaxCol
 
     return LMat, muMat, zMat, DMat, KaMat, zListArranged, MaxCol
+
+# Helper function to pad and stack a list of tensors
+def pad_and_stack(tensor_list):
+    max_len = max([len(t.numpy()) for t in tensor_list])
+    tensor_list_padded = [tf.pad(t, paddings=[[0, max_len - len(t.numpy())]]) for t in tensor_list]
+    return tf.stack(tensor_list_padded)
+
 
 
 
