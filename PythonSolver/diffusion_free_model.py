@@ -146,7 +146,6 @@ def Dimensionalize(x, quantity, ref_values):
     y = x*ref_values[quantity]
     return y
 
-import tensorflow as tf
 
 def TFEquilibriumParameters(species, Rmu=8.314, F=96500, Temperature=298):
     # Calculates parameters for chemical equilibrium calculation
