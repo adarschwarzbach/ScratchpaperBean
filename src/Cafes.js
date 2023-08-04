@@ -165,6 +165,7 @@ export class Cafes {
   }
 
   async init() {
+    console.log('init tf model')
     // initialize pH
     const [cH_n, efield_n] = await this.model_init.executeAsync({
       c_mat_sn: this.concentration_sn,
@@ -182,6 +183,7 @@ export class Cafes {
     this.efield_tn = [await efield_n.data()];
     this.time_t = [this.t];
     // disposal
+    console.log( this.concentration_tsn, cH_n, efield_n )
     efield_n.dispose();
   }
 
