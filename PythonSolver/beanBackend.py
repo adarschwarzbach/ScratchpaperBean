@@ -3,6 +3,55 @@ import numpy as np
 import json
 import time
 
+
+"""
+Lamda function for BEAN API
+You can test it by running the following curl command in your terminal:
+
+curl -X POST 'https://87wq9jocd2.execute-api.us-west-1.amazonaws.com/default/beanComputation' \
+-H 'Content-Type: application/json' \
+-d '{
+    "species": {
+        "0": {
+            "Name": "HCl",
+            "valence": [-1],
+            "mobility": [-7.91e-8],
+            "pKa": [-2],
+            "concentration": 0.01,
+            "type": "LE"
+        },
+        "1": {
+            "Name": "Tris",
+            "valence": [1],
+            "mobility": [2.95e-8],
+            "pKa": [8.076],
+            "concentration": 0.02,
+            "type": "Background"
+        },
+        "2": {
+            "Name": "MOPS",
+            "valence": [-1],
+            "mobility": [-2.69e-8],
+            "pKa": [7.2],
+            "concentration": 0.001,
+            "type": "Analyte"
+        },
+        "3": {
+            "Name": "HEPES",
+            "valence": [-1],
+            "mobility": [-2.35e-8],
+            "pKa": [7.5],
+            "concentration": 0.005,
+            "type": "TE"
+        }
+    }
+}'
+
+
+"""
+
+
+
 def convert_keys_to_int(data):
     updated_data = {}
     for key_str, value in data.items():
