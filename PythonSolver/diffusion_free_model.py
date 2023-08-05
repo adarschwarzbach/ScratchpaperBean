@@ -308,7 +308,6 @@ def EquilibriumParameters(species):
     pj = 3
     
     '''
-        print(zList)
         for z in zList:
             if z < 0:
                 LMat[j, z-nj] = np.prod(KaList[z-nj:-nj])
@@ -316,6 +315,20 @@ def EquilibriumParameters(species):
                 LMat[j, z-nj] = 1.0/np.prod(KaList[-nj:z-nj+1])
             elif z == 0:
                 LMat[j, z-nj] = 1.0
+
+    print(LMat)
+    print("\n\n")
+    print(muMat)
+    print("\n\n")
+    print(zMat)
+    print("\n\n")
+    print(DMat)
+    print("\n\n")
+    print(KaMat)
+    print("\n\n")
+    print(zListArranged)
+    print("\n\n")
+    print(MaxCol)
     return LMat, muMat, zMat, DMat, KaMat, zListArranged, MaxCol
 
 
@@ -346,7 +359,6 @@ def LzFunc(cH, LCube, cMat, ValCube, PolDeg, N, Nspecies, Kw, approx_factor):
 
     F_den = RHS_den/cH+1.0+Kw/(cH**2)
     F = F_num/F_den
-
     return F
 
 
@@ -714,46 +726,46 @@ t_start = time()
 
 cMat, cMat_init, muCube, DCube, ValCube, LCube, KaListCube, PolDeg, zListArranged, ref_values, species, N, Nspecies, Kw, cH = InitialConditions()  # Initialize the system using the input file
 
-# IonicCalcFlag = 0
+IonicCalcFlag = 0
 
-# cMat, Res, muMat, Sigma, pH, cH = FuncSteadyStateSolver(
-#     IonicCalcFlag, IonicEffectFlag, cH, cMat, LCube, KaListCube, ValCube, zListArranged, muCube, DCube, PolDeg, N, Nspecies, Kw, ref_values)
+cMat, Res, muMat, Sigma, pH, cH = FuncSteadyStateSolver(
+    IonicCalcFlag, IonicEffectFlag, cH, cMat, LCube, KaListCube, ValCube, zListArranged, muCube, DCube, PolDeg, N, Nspecies, Kw, ref_values)
 
-# print('\nResidue', Res)
-# print("\nComputed zone concentrations")
-# print(cMat)
-# print("\nComputed effective mobilities in various zones")
-# print(muMat)
-# #print(cH)
-# print('\npH in ITP zones',pH)
-# print('\nConducitivity in ITP zones',Sigma)
+print('\nResidue', Res)
+print("\nComputed zone concentrations")
+print(cMat)
+print("\nComputed effective mobilities in various zones")
+print(muMat)
+#print(cH)
+print('\npH in ITP zones',pH)
+print('\nConducitivity in ITP zones',Sigma)
 
-# #print(-np.log10(cH))
-# mu_abs = abs(muMat)
+#print(-np.log10(cH))
+mu_abs = abs(muMat)
 
-# print('\nCheck stability of zones using ITP focusing conditions')
-# Focus = 1 #initialise 
-# # df = pd.read_csv('Cationic_DataBase.csv', lineterminator='\n')
-# if (mu_abs[0, 0] > mu_abs[2, 0]) and (mu_abs[0, 0] > mu_abs[3, 0]):  # LE zone
-#     print('\nLE zone condition satisfied')
-# else:
-# 	Focus=Focus*0
-# 	print('LE zone condition not satisfied')    
-# if (mu_abs[0, 1] > mu_abs[2, 1]) and (mu_abs[2, 1] > mu_abs[3, 1]):  # Analyte zone
-#     print('\nAnalyte zone condition satisfied')
-# else:
-# 	Focus=Focus*0
-# 	print('Analyte zone condition not satisfied')
-# if (mu_abs[0, 2] > mu_abs[3, 2]) and (mu_abs[2, 2] > mu_abs[3, 2]):  # TE zone
-#     print('\nTE zone condition satisfied')
-# else:
-# 	Focus=Focus*0
-# 	print('\nTE zone condition not satisfied')
+print('\nCheck stability of zones using ITP focusing conditions')
+Focus = 1 #initialise 
+# df = pd.read_csv('Cationic_DataBase.csv', lineterminator='\n')
+if (mu_abs[0, 0] > mu_abs[2, 0]) and (mu_abs[0, 0] > mu_abs[3, 0]):  # LE zone
+    print('\nLE zone condition satisfied')
+else:
+	Focus=Focus*0
+	print('LE zone condition not satisfied')    
+if (mu_abs[0, 1] > mu_abs[2, 1]) and (mu_abs[2, 1] > mu_abs[3, 1]):  # Analyte zone
+    print('\nAnalyte zone condition satisfied')
+else:
+	Focus=Focus*0
+	print('Analyte zone condition not satisfied')
+if (mu_abs[0, 2] > mu_abs[3, 2]) and (mu_abs[2, 2] > mu_abs[3, 2]):  # TE zone
+    print('\nTE zone condition satisfied')
+else:
+	Focus=Focus*0
+	print('\nTE zone condition not satisfied')
 
-# if Focus==1:
-#    print('\nStable ITP predicted')
-# else:
-#    print('\nNo ITP predicted')	
+if Focus==1:
+   print('\nStable ITP predicted')
+else:
+   print('\nNo ITP predicted')	
 
 # save_data(cMat,cMat_init,cH,Sigma,pH,muMat)
 
