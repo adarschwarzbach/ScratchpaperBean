@@ -32,27 +32,27 @@ import pprint
 
 import tensorflow as tf
 
-species = { 0: {'Name': 'Imidazol', 'valence': [1], 'mobility': [52.0e-9], 
-		'pKa': [7.15], 'concentration': 0.07, 'type': 'LE'},
-	    1: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
-		'pKa': [-2], 'concentration': 0.03, 'type': 'Background'}, 
-	    2: {'Name': 'BisTris', 'valence': [1], 'mobility': [29.5e-9], 
-		'pKa': [6.4], 'concentration': 0.01, 'type': 'Analyte'},
-	    3: {'Name': 'Pyridine', 'valence': [1], 'mobility': [29.5e-9], 
-		'pKa': [5.18], 'concentration': 0.1, 'type': 'TE'}, 
-	}	
+# species = { 0: {'Name': 'Imidazol', 'valence': [1], 'mobility': [52.0e-9], 
+# 		'pKa': [7.15], 'concentration': 0.07, 'type': 'LE'},
+# 	    1: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
+# 		'pKa': [-2], 'concentration': 0.03, 'type': 'Background'}, 
+# 	    2: {'Name': 'BisTris', 'valence': [1], 'mobility': [29.5e-9], 
+# 		'pKa': [6.4], 'concentration': 0.01, 'type': 'Analyte'},
+# 	    3: {'Name': 'Pyridine', 'valence': [1], 'mobility': [29.5e-9], 
+# 		'pKa': [5.18], 'concentration': 0.1, 'type': 'TE'}, 
+# 	}	
 
 
 # START GLOBALS
-# species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
-# 		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
-# 	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
-# 		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
-# 	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
-# 		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
-# 	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
-# 		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
-# 	}
+species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
+		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
+	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
+		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
+	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
+		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
+	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
+		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
+	}
 
 
 cMat_read = [[0.01 , 0.   , 0.   , 0.   ],
