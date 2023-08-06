@@ -36,43 +36,65 @@ import tensorflow as tf
 # 		'pKa': [7.15], 'concentration': 0.07, 'type': 'LE'},
 # 	    1: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
 # 		'pKa': [-2], 'concentration': 0.03, 'type': 'Background'}, 
-# 	    2: {'Name': 'BisTris', 'valence': [1], 'mobility': [29.5e-9], 
-# 		'pKa': [6.4], 'concentration': 0.01, 'type': 'Analyte'},
-# 	    3: {'Name': 'Pyridine', 'valence': [1], 'mobility': [29.5e-9], 
-# 		'pKa': [5.18], 'concentration': 0.1, 'type': 'TE'}, 
-# 	}	
+	    # 2: {'Name': 'BisTris', 'valence': [1], 'mobility': [29.5e-9], 
+		# 'pKa': [6.4], 'concentration': 0.01, 'type': 'Analyte'},
+	    # 3: {'Name': 'Pyridine', 'valence': [1], 'mobility': [29.5e-9], 
+		# 'pKa': [5.18], 'concentration': 0.1, 'type': 'TE'}, 
+	# }	
 
 
 # START GLOBALS
+# species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
+# 		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
+# 	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
+# 		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
+# 	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
+# 		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
+# 	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
+# 		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
+# 	}
+
+
 species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
 		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
 	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
 		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
 	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
 		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
-	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
-		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
+	    3: {'Name': 'Sebacic-Acid', 'valence': [-2, -1], 'mobility': [-4.49e-008, -2.07e-008 ], 'pKa': [5.38, 4.53], 'concentration': 0.00021, 'type': 'LE'}
 	}
 
+def create_cMat(species):
+    Nspecies = len(species)
+    cMat_read = np.zeros((Nspecies, Nspecies)) #initialize cMat to zero
 
-cMat_read = [[0.01 , 0.   , 0.   , 0.   ],
-       [0.02 , 0.02 , 0.02 , 0.02 ],
-       [0.   , 0.001, 0.   , 0.   ],
-       [0.   , 0.   , 0.005, 0.005]]
+    for key, value in species.items():
+        if value['type'] == 'LE':
+            cMat_read[key,0] = value['concentration']
+        elif value['type'] == 'Background':
+            cMat_read[key,:] = value['concentration']
+        elif value['type'] == 'Analyte':
+            cMat_read[key,1] = value['concentration']
+        elif value['type'] == 'TE':
+            cMat_read[key,2:] = value['concentration']
+
+    return cMat_read
+
 
 
 IonicEffectFlag = 0
 met2lit = 1000.0
 N = 4
 Nspecies = len(species) 
-cMat_read = np.zeros((Nspecies,N)) #initialize cMat to zero
-cMat_read[0,0] = species[0]['concentration']
-cMat_read[1,:] = species[1]['concentration']
-cMat_read[2,1] = species[2]['concentration']
-cMat_read[3,2:] = species[3]['concentration']
+# cMat_read = np.zeros((Nspecies,N)) #initialize cMat to zero
+# cMat_read[0,0] = species[0]['concentration']
+# cMat_read[1,:] = species[1]['concentration']
+# cMat_read[2,1] = species[2]['concentration']
+# cMat_read[3,2:] = species[3]['concentration']
+cMat_read = create_cMat(species)
 # END GLOBALS
-
-
+print(cMat_read)
+print('new \n', create_cMat(species))
 
 F = 96500.            # C / mol
 met2lit = 1000.0e0
@@ -315,20 +337,6 @@ def EquilibriumParameters(species):
                 LMat[j, z-nj] = 1.0/np.prod(KaList[-nj:z-nj+1])
             elif z == 0:
                 LMat[j, z-nj] = 1.0
-
-    print(LMat)
-    print("\n\n")
-    print(muMat)
-    print("\n\n")
-    print(zMat)
-    print("\n\n")
-    print(DMat)
-    print("\n\n")
-    print(KaMat)
-    print("\n\n")
-    print(zListArranged)
-    print("\n\n")
-    print(MaxCol)
     return LMat, muMat, zMat, DMat, KaMat, zListArranged, MaxCol
 
 
