@@ -44,25 +44,25 @@ import tensorflow as tf
 
 
 # START GLOBALS
-# species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
-# 		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
-# 	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
-# 		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
-# 	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
-# 		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
-# 	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
-# 		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
-# 	}
-
-
 species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
 		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
 	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
 		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
 	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
 		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
-	    3: {'Name': 'Sebacic-Acid', 'valence': [-2, -1], 'mobility': [-4.49e-008, -2.07e-008 ], 'pKa': [5.38, 4.53], 'concentration': 0.00021, 'type': 'LE'}
+	    3: {'Name': 'HEPES', 'valence': [-1], 'mobility': [-23.5e-9], 
+		'pKa': [7.5], 'concentration': 0.005, 'type': 'TE'}, 
 	}
+
+
+# species = { 0: {'Name': 'HCl', 'valence': [-1], 'mobility': [-79.1e-9], 
+# 		'pKa': [-2], 'concentration': 0.01, 'type': 'LE'},
+# 	    1: {'Name': 'Tris', 'valence': [1], 'mobility': [29.5e-9], 
+# 		'pKa': [8.076], 'concentration': 0.02, 'type': 'Background'}, 
+# 	    2: {'Name': 'MOPS', 'valence': [-1], 'mobility': [-26.9e-9], 
+# 		'pKa': [7.2], 'concentration': 0.001, 'type': 'Analyte'},
+# 	    3: {'Name': 'Sebacic-Acid', 'valence': [-2, -1], 'mobility': [-4.49e-008, -2.07e-008 ], 'pKa': [5.38, 4.53], 'concentration': 0.00021, 'type': 'LE'}
+# 	}
 
 def create_cMat(species):
     Nspecies = len(species)
@@ -82,7 +82,6 @@ def create_cMat(species):
 
 
 
-IonicEffectFlag = 0
 met2lit = 1000.0
 N = 4
 Nspecies = len(species) 
@@ -735,6 +734,7 @@ t_start = time()
 cMat, cMat_init, muCube, DCube, ValCube, LCube, KaListCube, PolDeg, zListArranged, ref_values, species, N, Nspecies, Kw, cH = InitialConditions()  # Initialize the system using the input file
 
 IonicCalcFlag = 0
+IonicEffectFlag = 0
 
 cMat, Res, muMat, Sigma, pH, cH = FuncSteadyStateSolver(
     IonicCalcFlag, IonicEffectFlag, cH, cMat, LCube, KaListCube, ValCube, zListArranged, muCube, DCube, PolDeg, N, Nspecies, Kw, ref_values)

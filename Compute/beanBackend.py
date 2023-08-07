@@ -3,86 +3,42 @@ import numpy as np
 import json
 import time
 
-
-"""
-Lamda function for BEAN API
-You can test it by running the following curl command in your terminal:
-
-curl -X POST 'https://87wq9jocd2.execute-api.us-west-1.amazonaws.com/default/beanComputation' \
--H 'Content-Type: application/json' \
--d '{
-    "species": {
-        "0": {
-            "Name": "HCl",
-            "valence": [-1],
-            "mobility": [-7.91e-8],
-            "pKa": [-2],
-            "concentration": 0.01,
-            "type": "LE"
-        },
-        "1": {
-            "Name": "Tris",
-            "valence": [1],
-            "mobility": [2.95e-8],
-            "pKa": [8.076],
-            "concentration": 0.02,
-            "type": "Background"
-        },
-        "2": {
-            "Name": "MOPS",
-            "valence": [-1],
-            "mobility": [-2.69e-8],
-            "pKa": [7.2],
-            "concentration": 0.001,
-            "type": "Analyte"
-        },
-        "3": {
-            "Name": "HEPES",
-            "valence": [-1],
-            "mobility": [-2.35e-8],
-            "pKa": [7.5],
-            "concentration": 0.005,
-            "type": "TE"
-        }
-    }
-}'
-
-
-"""
-
-
-
 def convert_keys_to_int(data):
     updated_data = {}
     for key_str, value in data.items():
         key_int = int(key_str)
         updated_data[key_int] = value
     return updated_data
-    
+
+def create_cMat(species):
+    Nspecies = len(species)
+    cMat_read = np.zeros((Nspecies, Nspecies)) #initialize cMat to zero
+
+    for key, value in species.items():
+        if value['type'] == 'LE':
+            cMat_read[key,0] = value['concentration']
+        elif value['type'] == 'Background':
+            cMat_read[key,:] = value['concentration']
+        elif value['type'] == 'Analyte':
+            cMat_read[key,1] = value['concentration']
+        elif value['type'] == 'TE':
+            cMat_read[key,2:] = value['concentration']
+
+    return cMat_read
+
 
 def lambda_handler(event, context):
     try:
         species = convert_keys_to_int(event.get('species'))
-    
-    
-        cMat_read = [[0.01 , 0.   , 0.   , 0.   ],
-            [0.02 , 0.02 , 0.02 , 0.02 ],
-            [0.   , 0.001, 0.   , 0.   ],
-            [0.   , 0.   , 0.005, 0.005]]
-    
-    
-        IonicEffectFlag = 0
+        
+        IonicEffectFlag, IonicCalcFlag = event.get('ionicEffect'), event.get('ionicEffect')
+
         met2lit = 1000.0
         N = 4
         Nspecies = len(species) 
-        cMat_read = np.zeros((Nspecies,N)) #initialize cMat to zero
-        cMat_read[0,0] = species[0]['concentration']
-        cMat_read[1,:] = species[1]['concentration']
-        cMat_read[2,1] = species[2]['concentration']
-        cMat_read[3,2:] = species[3]['concentration']
-        # END GLOBALS
+        cMat_read = create_cMat(species)
     
-    
+
     
         F = 96500.            # C / mol
         met2lit = 1000.0e0
@@ -92,7 +48,6 @@ def lambda_handler(event, context):
         muOH = 205e-9
         visc = 1e-3  # Dynamic viscosity (water) (Pa s)
     
-        
         
         def InitialConditions():
             cMat = cMat_read*met2lit  # Convert from mol/lit to mol/m^3
@@ -121,10 +76,6 @@ def lambda_handler(event, context):
                           'conductivity': mu_max*c_max*F,
                           'diffusive_current': D_max*c_max*F}
         
-            # nondimensionalize concentration, x, t, mobility, current, diffusivity, conductivity diffusive_current
-        #   cMat = NonDimensionalize(cMat, 'concentration', ref_values)
-        #   muCube = NonDimensionalize(muCube, 'mobility', ref_values)
-        #   DCube = NonDimensionalize(DCube, 'diffusivity', ref_values)
         
             return cMat, cMat_init, muCube, DCube, ValCube, LCube, KaListCube, PolDeg, zListArranged, ref_values, species, N, Nspecies, Kw, cH
         
@@ -596,7 +547,6 @@ def lambda_handler(event, context):
     
         cMat, cMat_init, muCube, DCube, ValCube, LCube, KaListCube, PolDeg, zListArranged, ref_values, species, N, Nspecies, Kw, cH = InitialConditions()  # Initialize the system using the input file
     
-        IonicCalcFlag = 0
     
         cMat, Res, muMat, Sigma, pH, cH, analyteZone, adjustedTeZone = FuncSteadyStateSolver(IonicCalcFlag, IonicEffectFlag, cH, cMat, LCube, KaListCube, ValCube, zListArranged, muCube, DCube, PolDeg, N, Nspecies, Kw, ref_values)
         mu_abs = abs(muMat)
